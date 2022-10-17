@@ -96,7 +96,6 @@ int main()
 
     while(Nro != 4)
     {
-
         switch(Nro)
         {
             case 1:
