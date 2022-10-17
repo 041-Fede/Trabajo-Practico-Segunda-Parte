@@ -65,7 +65,7 @@ void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz,Cupos MatrizDeCur
 void InsertarCurso(NodoCursos *&ListaDeCursos,Cursos Dato);
 void InsertarDocente(NodoArbol *&Raiz,Docentes Dato);
 void MostrarOperaciones(int &Nro);
-void CargaDeAlumnos(NodoCursos *&ListaDeCursos,NodoColaDeEspera *MatrizDeEsperaPrimero[][8],NodoColaDeEspera *MatrizDeEsperaUltimo[][8],Cupos MatrizDeCursos[][8]);
+void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,NodoColaDeEspera *MatrizDeEsperaPrimero[][8],NodoColaDeEspera *MatrizDeEsperaUltimo[][8],Cupos MatrizDeCursos[][8]);
 void InsertarAlumno(NodoAlumno *&ListaDeAlumnos,Alumnos Dato);
 void InsertarEnColaDeEspera(NodoColaDeEspera *&Primero,NodoColaDeEspera *&Ultimo,Alumnos Dato);
 void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,NodoColaDeEspera *MatrizDeEsperaPrimero[][8],NodoColaDeEspera *MatrizDeEsperaUltimo[][8],Cupos MatrizDeCursos[][8]);
@@ -73,6 +73,7 @@ void Desencolar(NodoColaDeEspera *&Primero,NodoColaDeEspera *&Ultimo,Alumnos &Da
 void MostrarListado(NodoCursos *ListaDeCursos,Cupos MatrizDeCursos[][8]);
 void MostrarListadoDeRechazados(NodoCursos *&ListaDeCursos,NodoColaDeEspera *MatrizDeEsperaPrimero[][8],NodoColaDeEspera *MatrizDeEsperaUltimo[][8]);
 void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz,Cupos MatrizDeCursos[][8]);
+void GenerarArchivos(NodoCursos *ListaDeAlumnos);
 int NumeroDeIdioma(string Idioma);
 bool EliminarNodo(NodoAlumno *&ListaDeAlumnos,int Dni);
 FILE *CambioDeArchivo(int Nro);
@@ -85,7 +86,7 @@ int main()
     int Nro;
     NodoArbol *Raiz = NULL;
     NodoCursos *ListaDeCursos = NULL;
-    NodoColaDeEspera *MatrizDeEsperaPrimero[6][8]; // Hay que preguntarle a la profe!
+    NodoColaDeEspera *MatrizDeEsperaPrimero[6][8]; // ¡Hay que preguntarle a la profe!
     NodoColaDeEspera *MatrizDeEsperaUltimo[6][8];
     Cupos MatrizDeCursos[6][8];
 
@@ -103,7 +104,7 @@ int main()
         {
             case 1:
                 {
-                    CargaDeAlumnos(ListaDeCursos,MatrizDeEsperaPrimero,MatrizDeEsperaUltimo,MatrizDeCursos);
+                    CargaDeUnAlumnos(ListaDeCursos,MatrizDeEsperaPrimero,MatrizDeEsperaUltimo,MatrizDeCursos);
                     break;
                 }
             case 2:
@@ -136,6 +137,8 @@ int main()
     ListarInOrden(ListaDeCursos,Raiz,MatrizDeCursos);
 
     cout << "-----------------" << endl;
+
+    GenerarArchivos(ListaDeCursos);
 
     return 0;
 }
@@ -277,8 +280,6 @@ void InsertarDocente(NodoArbol *&Raiz,Docentes Dato)
 
 void MostrarOperaciones(int &Nro)
 {
-    int CodDeOperacion;
-
     cout << "Menu de Opciones" << endl;
     cout << "-----------------" << endl;
     cout << "1. Inscripcion de estudiante" << endl;
@@ -287,12 +288,10 @@ void MostrarOperaciones(int &Nro)
     cout << "4. Salir" << endl;
     cout << "-----------------" << endl;
     cout << "Ingrese una opcion: ";
-    cin >> CodDeOperacion;
-
-    Nro = CodDeOperacion;
+    cin >> Nro;
 }
 
-void CargaDeAlumnos(NodoCursos *&ListaDeCursos,NodoColaDeEspera *MatrizDeEsperaPrimero[][8],NodoColaDeEspera *MatrizDeEsperaUltimo[][8],Cupos MatrizDeCursos[][8])// Carga de Alumnos:
+void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,NodoColaDeEspera *MatrizDeEsperaPrimero[][8],NodoColaDeEspera *MatrizDeEsperaUltimo[][8],Cupos MatrizDeCursos[][8])// Carga de Alumnos:
 {
     int CodDeCurso,Nro;
     NodoCursos *Aux;
@@ -427,8 +426,10 @@ void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,NodoColaDeEspera *MatrizDeEspe
         }
         else
         {
-            cout << "NO SE ENCONTRO EL DNI A DAR A BAJA" << endl;
+            cout << "NO SE ENCONTRO EL DNI A DAR DE BAJA" << endl;
         }
+
+        cout << "-----------------" << endl;
     }
 }
 
@@ -524,6 +525,41 @@ void MostrarListadoDeRechazados(NodoCursos *&ListaDeCursos,NodoColaDeEspera *Mat
         }
 
         cout << "-----------------" << endl;
+        Aux = Aux->Sgte;
+    }
+}
+
+void GenerarArchivos(NodoCursos *ListaDeCursos)
+{
+    string Niveles[8] = {"Nivel1","Nivel2","Nivel3","Nivel4","Nivel5","Nivel6","Nivel7","Nivel8"};
+    char NombreDelArchivo[45];
+    NodoCursos *Aux = ListaDeCursos;
+    NodoAlumno *AuxAlumno;
+    Alumnos A;
+
+    while(Aux != NULL)
+    {
+        strcpy(NombreDelArchivo,Aux->Info.Idioma.c_str());
+        strcat(NombreDelArchivo,Niveles[Aux->Info.Nivel - 1].c_str());
+        strcat(NombreDelArchivo,".dat");
+
+        FILE *Archivo = fopen(NombreDelArchivo,"wb");
+
+        AuxAlumno = Aux->Info.ListaDeAlumnos;
+
+        while(AuxAlumno != NULL)
+        {
+            A.Dni = AuxAlumno->Info.Dni;
+
+            strcpy(A.Nombre,AuxAlumno->Info.Nombre);
+
+            fwrite(&A,sizeof(Alumnos),1,Archivo);
+
+            AuxAlumno = AuxAlumno->Sgte;
+        }
+
+        fclose(Archivo);
+
         Aux = Aux->Sgte;
     }
 }
