@@ -207,10 +207,10 @@ void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz,Cupos MatrizDeCur
                     D.Dni = C.Dni;
 
                     InsertarDocente(Raiz,D);
-
-                    MatrizDeCursos[Nro][AuxC.Nivel - 1].CuposDisponibles = C.Cupo;
-                    MatrizDeCursos[Nro][AuxC.Nivel - 1].DniDelDocente = C.Dni;
                 }
+                
+                MatrizDeCursos[Nro][AuxC.Nivel - 1].CuposDisponibles = C.Cupo;
+                MatrizDeCursos[Nro][AuxC.Nivel - 1].DniDelDocente = C.Dni;
 
                 fread(&C,sizeof(CursoDelArchivo),1,Archivo);
             }
