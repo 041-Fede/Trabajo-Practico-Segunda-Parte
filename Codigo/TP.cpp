@@ -4,11 +4,6 @@
 
 using namespace std;
 
-struct Cupos
-{
-    int CuposDisponibles,CuposOcupados,DniDelDocente;
-};
-
 struct CursoDelArchivo
 {
     int CodDeCurso,Nivel,Cupo,Dni;
@@ -29,7 +24,7 @@ struct NodoAlumno
 
 struct Cursos
 {
-    int CodDeCurso,Nivel;
+    int CodDeCurso,Nivel,CuposDisponibles,CuposOcupados,DniDelDocente;
     string Idioma;
     NodoAlumno *ListaDeAlumnos;
 };
@@ -54,7 +49,7 @@ struct ColaDeEspera
 
 struct Docentes
 {
-    int Dni,CantTotalDeAlumnos;
+    int Dni;
     string NombreDelDocente;
 };
 
@@ -66,19 +61,18 @@ struct NodoArbol
 };
 
 void InicializarMatrizDeEspera(ColaDeEspera MatrizDeEspera[][8]);
-void InicializarMatriz(Cupos Matriz[][8]);
-void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz,Cupos MatrizDeCursos[][8]);
+void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz);
 void InsertarCurso(NodoCursos *&ListaDeCursos,Cursos Dato);
 void InsertarDocente(NodoArbol *&Raiz,Docentes Dato);
 void MostrarOperaciones(int &Nro);
-void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8],Cupos MatrizDeCursos[][8]);
+void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8]);
 void InsertarAlumno(NodoAlumno *&ListaDeAlumnos,Alumnos Dato);
 void InsertarEnColaDeEspera(NodoColaDeEspera *&Primero,NodoColaDeEspera *&Ultimo,Alumnos Dato);
-void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8],Cupos MatrizDeCursos[][8]);
+void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8]);
 void Desencolar(NodoColaDeEspera *&Primero,NodoColaDeEspera *&Ultimo,Alumnos &Dato);
-void MostrarListado(NodoCursos *ListaDeCursos,Cupos MatrizDeCursos[][8]);
+void MostrarListado(NodoCursos *ListaDeCursos);
 void MostrarListadoDeRechazados(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8]);
-void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz,Cupos MatrizDeCursos[][8]);
+void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz);
 void GenerarArchivos(NodoCursos *ListaDeAlumnos);
 int NumeroDeIdioma(string Idioma);
 bool EliminarNodo(NodoAlumno *&ListaDeAlumnos,int Dni);
@@ -93,33 +87,32 @@ int main()
     NodoArbol *Raiz = NULL;
     NodoCursos *ListaDeCursos = NULL;
     ColaDeEspera MatrizDeEspera[6][8];
-    Cupos MatrizDeCursos[6][8];
-
-    InicializarMatriz(MatrizDeCursos);
 
     InicializarMatrizDeEspera(MatrizDeEspera);
 
-    CargaDeCursos(ListaDeCursos,Raiz,MatrizDeCursos);
+    CargaDeCursos(ListaDeCursos,Raiz);
 
     MostrarOperaciones(Nro);
 
     while(Nro != 4)
     {
+        cout << "-----------------" << endl;
+
         switch(Nro)
         {
             case 1:
                 {
-                    CargaDeUnAlumnos(ListaDeCursos,MatrizDeEspera,MatrizDeCursos);
+                    CargaDeUnAlumnos(ListaDeCursos,MatrizDeEspera);
                     break;
                 }
             case 2:
                 {
-                    DarDeBajaUnAlumno(ListaDeCursos,MatrizDeEspera,MatrizDeCursos);
+                    DarDeBajaUnAlumno(ListaDeCursos,MatrizDeEspera);
                     break;
                 }
             case 3:
                 {
-                    MostrarListado(ListaDeCursos,MatrizDeCursos);
+                    MostrarListado(ListaDeCursos);
                     break;
                 }
             default:
@@ -139,7 +132,7 @@ int main()
 
     cout << "Listado de los docentes que dictaran cursos ordenado de menor a mayor por numero de documento: " << endl;
 
-    ListarInOrden(ListaDeCursos,Raiz,MatrizDeCursos);
+    ListarInOrden(ListaDeCursos,Raiz);
 
     cout << "-----------------" << endl;
 
@@ -160,22 +153,8 @@ void InicializarMatrizDeEspera(ColaDeEspera MatrizDeEspera[][8])
     }
 }
 
-void InicializarMatriz(Cupos MatrizDeCursos[][8])
+void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz)
 {
-    for(int i = 0; i < 6; i++)
-    {
-        for(int j = 0; j < 8; j++)
-        {
-            MatrizDeCursos[i][j].CuposDisponibles = 0;
-            MatrizDeCursos[i][j].CuposOcupados = 0;
-            MatrizDeCursos[i][j].DniDelDocente = 0;
-        }
-    }
-}
-
-void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz,Cupos MatrizDeCursos[][8])
-{
-    int Nro;
     NodoArbol *Aux;
     Cursos AuxC;
     CursoDelArchivo C;
@@ -192,7 +171,9 @@ void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz,Cupos MatrizDeCur
             while(!feof(Archivo))
             {
                 AuxC.Idioma = C.Idioma;
-                Nro = NumeroDeIdioma(AuxC.Idioma);
+                AuxC.CuposDisponibles = C.Cupo;
+                AuxC.CuposOcupados = 0;
+                AuxC.DniDelDocente = C.Dni;
                 AuxC.Nivel = C.Nivel;
                 AuxC.CodDeCurso = C.CodDeCurso;
                 AuxC.ListaDeAlumnos = NULL;
@@ -208,9 +189,6 @@ void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz,Cupos MatrizDeCur
 
                     InsertarDocente(Raiz,D);
                 }
-                
-                MatrizDeCursos[Nro][AuxC.Nivel - 1].CuposDisponibles = C.Cupo;
-                MatrizDeCursos[Nro][AuxC.Nivel - 1].DniDelDocente = C.Dni;
 
                 fread(&C,sizeof(CursoDelArchivo),1,Archivo);
             }
@@ -296,7 +274,7 @@ void MostrarOperaciones(int &Nro)
     cin >> Nro;
 }
 
-void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8],Cupos MatrizDeCursos[][8])// Carga de Alumnos:
+void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8]) // Carga de Alumnos:
 {
     int CodDeCurso,Nro;
     NodoCursos *Aux;
@@ -323,12 +301,12 @@ void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8
         {
             Nro = NumeroDeIdioma(Aux->Info.Idioma);
 
-            if(MatrizDeCursos[Nro][Aux->Info.Nivel - 1].CuposDisponibles > 0)
+            if(Aux->Info.CuposDisponibles > 0)
             {
                 InsertarAlumno(Aux->Info.ListaDeAlumnos,A);
 
-                MatrizDeCursos[Nro][Aux->Info.Nivel - 1].CuposDisponibles -= 1;
-                MatrizDeCursos[Nro][Aux->Info.Nivel - 1].CuposOcupados += 1;
+                Aux->Info.CuposDisponibles--;
+                Aux->Info.CuposOcupados++;
             }
             else
             {
@@ -393,12 +371,12 @@ void InsertarEnColaDeEspera(NodoColaDeEspera *&Primero,NodoColaDeEspera *&Ultimo
     Ultimo = Nuevo;
 }
 
-void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8],Cupos MatrizDeCursos[][8])
+void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8])
 {
-    bool Verificador;
     int CodDeCurso,Dni,Nro;
-    NodoCursos *Aux;
+    bool Verificador;
     Alumnos A;
+    NodoCursos *Aux;
 
     cout << "Informe codigo de curso: ";
     cin >> CodDeCurso;
@@ -410,7 +388,6 @@ void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][
         cout << "Informe dni del alumno a dar a baja: ";
         cin >> Dni;
 
-        Nro = NumeroDeIdioma(Aux->Info.Idioma);
         Verificador = EliminarNodo(Aux->Info.ListaDeAlumnos,Dni);
 
         if(Verificador)
@@ -423,8 +400,8 @@ void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][
             }
             else
             {
-                MatrizDeCursos[Nro][Aux->Info.Nivel - 1].CuposDisponibles += 1;
-                MatrizDeCursos[Nro][Aux->Info.Nivel - 1].CuposOcupados -= 1;
+                Aux->Info.CuposDisponibles++;
+                Aux->Info.CuposOcupados--;
             }
 
             cout << "OPERACION REALIZADA CON EXITO!" << endl;
@@ -452,20 +429,16 @@ void Desencolar(NodoColaDeEspera *&Primero,NodoColaDeEspera *&Ultimo,Alumnos &Da
     }
 }
 
-void MostrarListado(NodoCursos *ListaDeCursos,Cupos MatrizDeCursos[][8])
+void MostrarListado(NodoCursos *ListaDeCursos)
 {
-    int Nro;
     NodoCursos *Aux = ListaDeCursos;
     NodoAlumno *AuxAlumno;
 
     while(Aux != NULL)
     {
         cout << "Codigo de Curso: " << Aux->Info.CodDeCurso << endl;
-
-        Nro = NumeroDeIdioma(Aux->Info.Idioma);
-
-        cout << "Cantidad de vacantes disponibles: " << MatrizDeCursos[Nro][Aux->Info.Nivel - 1].CuposDisponibles << endl;
-        cout << "Cantidad de vacantes ocupadas: " << MatrizDeCursos[Nro][Aux->Info.Nivel - 1].CuposOcupados << endl;
+        cout << "Cantidad de vacantes disponibles: " << Aux->Info.CuposDisponibles << endl;
+        cout << "Cantidad de vacantes ocupadas: " << Aux->Info.CuposOcupados << endl;
         cout << "Listado de alumnos inscriptos: " << endl;
 
         AuxAlumno = Aux->Info.ListaDeAlumnos;
@@ -490,22 +463,20 @@ void MostrarListado(NodoCursos *ListaDeCursos,Cupos MatrizDeCursos[][8])
     }
 }
 
-void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz,Cupos MatrizDeCursos[][8])
+void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz)
 {
-    int Nro,CantTotalDeAlumnos = 0;
+    int CantTotalDeAlumnos = 0;
     NodoCursos *Aux = ListaDeCursos;
 
     if(Raiz != NULL)
     {
-        ListarInOrden(ListaDeCursos,Raiz->Izq,MatrizDeCursos);
+        ListarInOrden(ListaDeCursos,Raiz->Izq);
 
         while(Aux != NULL)
         {
-            Nro = NumeroDeIdioma(Aux->Info.Idioma);
-
-            if(Raiz->Info.Dni == MatrizDeCursos[Nro][Aux->Info.Nivel - 1].DniDelDocente)
+            if(Raiz->Info.Dni == Aux->Info.DniDelDocente)
             {
-                CantTotalDeAlumnos += MatrizDeCursos[Nro][Aux->Info.Nivel - 1].CuposOcupados;
+                CantTotalDeAlumnos += Aux->Info.CuposOcupados;
             }
 
             Aux = Aux->Sgte;
@@ -513,7 +484,7 @@ void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz,Cupos MatrizDeCurso
 
         cout << "Nombre del Docente: " << Raiz->Info.NombreDelDocente << " - " << "Dni del docente: " << Raiz->Info.Dni << " - " << "Cantidad total de alumnos a cargo: " << CantTotalDeAlumnos << endl;
 
-        ListarInOrden(ListaDeCursos,Raiz->Der,MatrizDeCursos);
+        ListarInOrden(ListaDeCursos,Raiz->Der);
     }
 }
 
