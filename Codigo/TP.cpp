@@ -89,9 +89,7 @@ int main()
     ColaDeEspera MatrizDeEspera[6][8];
 
     InicializarMatrizDeEspera(MatrizDeEspera);
-
     CargaDeCursos(ListaDeCursos,Raiz);
-
     MostrarOperaciones(Nro);
 
     while(Nro != 4)
