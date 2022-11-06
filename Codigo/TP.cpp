@@ -76,8 +76,6 @@ void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz);
 void GenerarArchivos(NodoCursos *ListaDeAlumnos);
 int NumeroDeIdioma(string Idioma);
 bool EliminarNodo(NodoAlumno *&ListaDeAlumnos,int Dni);
-FILE *CambioDeArchivo(int Nro);
-NodoArbol *BusquedaDeDocente(NodoArbol *Raiz,int Dni);
 NodoCursos *BusquedaDeCurso(NodoCursos *ListaDeCursos,int CodDeCurso);
 NodoAlumno *BusquedaDeAlumno(NodoAlumno *ListaDeAlumnos,int Dni);
 
@@ -153,20 +151,20 @@ void InicializarMatrizDeEspera(ColaDeEspera MatrizDeEspera[][8])
 
 void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz)
 {
+    FILE *ArchivoA = fopen("Ingles.dat","rb"),*ArchivoB = fopen("Frances.dat","rb"),*ArchivoC = fopen("Aleman.dat","rb"),*ArchivoD = fopen("Chino.dat","rb"),*ArchivoE = fopen("Italiano.dat","rb"),*ArchivoF = fopen("Portugues.dat","rb");
+    FILE *Archivos[6] = {ArchivoA,ArchivoB,ArchivoC,ArchivoD,ArchivoE,ArchivoF};
     NodoArbol *Aux;
-    Cursos AuxC;
     CursoDelArchivo C;
+    Cursos AuxC;
     Docentes D;
 
     for(int i = 0; i < 6; i++)
     {
-        FILE *Archivo = CambioDeArchivo(i);
-
-        if(Archivo != NULL)
+        if(Archivos[i] != NULL)
         {
-            fread(&C,sizeof(CursoDelArchivo),1,Archivo);
+            fread(&C,sizeof(CursoDelArchivo),1,Archivos[i]);
 
-            while(!feof(Archivo))
+            while(!feof(Archivos[i]))
             {
                 AuxC.Idioma = C.Idioma;
                 AuxC.CuposDisponibles = C.Cupo;
@@ -175,23 +173,15 @@ void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz)
                 AuxC.Nivel = C.Nivel;
                 AuxC.CodDeCurso = C.CodDeCurso;
                 AuxC.ListaDeAlumnos = NULL;
+                D.NombreDelDocente = C.Nombre;
+                D.Dni = C.Dni;
 
                 InsertarCurso(ListaDeCursos,AuxC);
-
-                Aux = BusquedaDeDocente(Raiz,C.Dni);
-
-                if(Aux == NULL)
-                {
-                    D.NombreDelDocente = C.Nombre;
-                    D.Dni = C.Dni;
-
-                    InsertarDocente(Raiz,D);
-                }
-
-                fread(&C,sizeof(CursoDelArchivo),1,Archivo);
+                InsertarDocente(Raiz,D);
+                fread(&C,sizeof(CursoDelArchivo),1,Archivos[i]);
             }
 
-            fclose(Archivo);
+            fclose(Archivos[i]);
         }
     }
 }
@@ -223,40 +213,45 @@ void InsertarCurso(NodoCursos *&ListaDeCursos,Cursos Dato)
 
 void InsertarDocente(NodoArbol *&Raiz,Docentes Dato)
 {
-    NodoArbol *Nuevo = new NodoArbol;
-    Nuevo->Info = Dato;
-    Nuevo->Der = Nuevo->Izq = NULL;
+   NodoArbol *Aux = Raiz;
+   NodoArbol *Antecesor;
 
-    if(Raiz == NULL)
-    {
-        Raiz = Nuevo;
-    }
-    else
-    {
-        NodoArbol *Antecesor,*Aux = Raiz;
+   while(Aux != NULL && Aux->Info.Dni != Dato.Dni)
+   {
+       Antecesor = Aux;
 
-        while(Aux != NULL)
+       if(Dato.Dni < Aux->Info.Dni)
+       {
+            Aux = Aux->Izq;
+       }
+       else
+       {
+            Aux = Aux->Der;
+       }
+   }
+
+   if(Aux == NULL || Aux->Info.Dni != Dato.Dni)
+   {
+        NodoArbol *Nuevo = new NodoArbol;
+        Nuevo->Info = Dato;
+        Nuevo->Der = Nuevo->Izq = NULL;
+
+        if(Raiz == NULL)
         {
-            Antecesor = Aux;
-
-            if(Dato.Dni < Aux->Info.Dni)
-            {
-                Aux = Aux->Izq;
-            }
-            else
-            {
-                Aux = Aux->Der;
-            }
-        }
-        if(Dato.Dni < Antecesor->Info.Dni)
-        {
-            Antecesor->Izq = Nuevo;
+            Raiz = Nuevo;
         }
         else
         {
-            Antecesor->Der = Nuevo;
+            if(Dato.Dni < Antecesor->Info.Dni)
+            {
+                Antecesor->Izq = Nuevo;
+            }
+            else
+            {
+                Antecesor->Der = Nuevo;
+            }
         }
-    }
+   }
 }
 
 void MostrarOperaciones(int &Nro)
@@ -286,7 +281,6 @@ void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8
 
     if(Aux != NULL)
     {
-
         cout << "Informe nombre del estudiante a inscribir: ";
         cin >> A.Nombre;
 
@@ -393,7 +387,6 @@ void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][
             if(MatrizDeEspera[Nro][Aux->Info.Nivel - 1].Primero != NULL)
             {
                 Desencolar(MatrizDeEspera[Nro][Aux->Info.Nivel - 1].Primero,MatrizDeEspera[Nro][Aux->Info.Nivel - 1].Ultimo,A);
-
                 InsertarAlumno(Aux->Info.ListaDeAlumnos,A);
             }
             else
@@ -443,7 +436,7 @@ void MostrarListado(NodoCursos *ListaDeCursos)
 
         if(AuxAlumno == NULL)
         {
-            cout << "VACIA" << endl;
+            cout << "NO HUBO NINGUN INSCRIPTO!" << endl;
         }
         else
         {
@@ -500,7 +493,7 @@ void MostrarListadoDeRechazados(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDe
 
         if(MatrizDeEspera[Nro][Aux->Info.Nivel - 1].Primero == NULL)
         {
-            cout << "VACIA" << endl;
+            cout << "COLA DE ESPERA VACIA!" << endl;
         }
         else
         {
@@ -543,7 +536,6 @@ void GenerarArchivos(NodoCursos *ListaDeCursos)
                 A.Dni = AuxAlumno->Info.Dni;
 
                 strcpy(A.Nombre,AuxAlumno->Info.Nombre);
-
                 fwrite(&A,sizeof(Alumnos),1,Archivo);
 
                 AuxAlumno = AuxAlumno->Sgte;
@@ -618,72 +610,6 @@ bool EliminarNodo(NodoAlumno *&ListaDeAlumnos,int Dni)
     }
 
     return Verificador;
-}
-
-FILE *CambioDeArchivo(int Nro)
-{
-    switch(Nro)
-    {
-        case 0:
-            {
-                FILE *ArchivoA = fopen("Ingles.dat","rb");
-                return ArchivoA;
-                break;
-            }
-        case 1:
-            {
-                FILE *ArchivoB = fopen("Frances.dat","rb");
-                return ArchivoB;
-                break;
-            }
-        case 2:
-            {
-                FILE *ArchivoC = fopen("Aleman.dat","rb");
-                return ArchivoC;
-                break;
-            }
-        case 3:
-            {
-                FILE *ArchivoD = fopen("Chino.dat","rb");
-                return ArchivoD;
-                break;
-            }
-        case 4:
-            {
-                FILE *ArchivoE = fopen("Italiano.dat","rb");
-                return ArchivoE;
-                break;
-            }
-        case 5:
-            {
-                FILE *ArchivoF = fopen("Portugues.dat","rb");
-                return ArchivoF;
-                break;
-            }
-        default:
-            {
-                return NULL;
-            }
-    }
-}
-
-NodoArbol *BusquedaDeDocente(NodoArbol *Raiz,int Dni)
-{
-   NodoArbol *Aux = Raiz;
-
-   while(Aux != NULL && Aux->Info.Dni != Dni)
-   {
-       if(Dni < Aux->Info.Dni)
-       {
-            Aux = Aux->Izq;
-       }
-       else
-       {
-            Aux = Aux->Der;
-       }
-   }
-
-   return Aux;
 }
 
 NodoCursos *BusquedaDeCurso(NodoCursos *ListaDeCursos,int CodDeCurso)
