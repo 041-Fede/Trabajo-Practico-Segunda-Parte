@@ -25,7 +25,7 @@ struct NodoAlumno
 struct Cursos
 {
     int CodDeCurso,Nivel,CuposDisponibles,CuposOcupados,DniDelDocente;
-    string Idioma,NombreDelDocente;
+    string Idioma;
     NodoAlumno *ListaDeAlumnos;
 };
 
@@ -49,7 +49,7 @@ struct ColaDeEspera
 
 struct Docentes
 {
-    int Dni,CantTotalDeAlumnos;
+    int Dni;
     string NombreDelDocente;
 };
 
@@ -63,6 +63,7 @@ struct NodoArbol
 void InicializarMatrizDeEspera(ColaDeEspera MatrizDeEspera[][8]);
 void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz);
 void InsertarCurso(NodoCursos *&ListaDeCursos,Cursos Dato);
+void InsertarDocente(NodoArbol *&Raiz,Docentes Dato);
 void MostrarOperaciones(int &Nro);
 void CargaDeUnAlumnos(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8]);
 void InsertarAlumno(NodoAlumno *&ListaDeAlumnos,Alumnos Dato);
@@ -70,8 +71,6 @@ void InsertarEnColaDeEspera(NodoColaDeEspera *&Primero,NodoColaDeEspera *&Ultimo
 void DarDeBajaUnAlumno(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8]);
 void Desencolar(NodoColaDeEspera *&Primero,NodoColaDeEspera *&Ultimo,Alumnos &Dato);
 void MostrarListado(NodoCursos *ListaDeCursos);
-void CargaDeDocentes(NodoCursos *ListaDeCursos,NodoArbol *&Raiz);
-void InsertarDocente(NodoArbol *&Raiz,Docentes Dato);
 void MostrarListadoDeRechazados(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8]);
 void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz);
 void GenerarArchivos(NodoCursos *ListaDeAlumnos);
@@ -121,8 +120,6 @@ int main()
         cout << "Ingrese una opcion: ";
         cin >> Nro;
     }
-
-    CargaDeDocentes(ListaDeCursos,Raiz);
 
     cout << "-----------------" << endl;
     cout << "Listado por codigo de curso de los alumnos que no lograron obtener vacante: " << endl;
@@ -176,9 +173,11 @@ void CargaDeCursos(NodoCursos *&ListaDeCursos,NodoArbol *&Raiz)
                 AuxC.Nivel = C.Nivel;
                 AuxC.CodDeCurso = C.CodDeCurso;
                 AuxC.ListaDeAlumnos = NULL;
-                AuxC.NombreDelDocente = C.Nombre;
+                D.NombreDelDocente = C.Nombre;
+                D.Dni = C.Dni;
 
                 InsertarCurso(ListaDeCursos,AuxC);
+                InsertarDocente(Raiz,D);
                 fread(&C,sizeof(CursoDelArchivo),1,Archivos[i]);
             }
 
@@ -210,6 +209,49 @@ void InsertarCurso(NodoCursos *&ListaDeCursos,Cursos Dato)
     {
         ListaDeCursos = Nuevo;
     }
+}
+
+void InsertarDocente(NodoArbol *&Raiz,Docentes Dato)
+{
+   NodoArbol *Aux = Raiz;
+   NodoArbol *Antecesor;
+
+   while(Aux != NULL && Aux->Info.Dni != Dato.Dni)
+   {
+       Antecesor = Aux;
+
+       if(Dato.Dni < Aux->Info.Dni)
+       {
+            Aux = Aux->Izq;
+       }
+       else
+       {
+            Aux = Aux->Der;
+       }
+   }
+
+   if(Aux == NULL || Aux->Info.Dni != Dato.Dni)
+   {
+        NodoArbol *Nuevo = new NodoArbol;
+        Nuevo->Info = Dato;
+        Nuevo->Der = Nuevo->Izq = NULL;
+
+        if(Raiz == NULL)
+        {
+            Raiz = Nuevo;
+        }
+        else
+        {
+            if(Dato.Dni < Antecesor->Info.Dni)
+            {
+                Antecesor->Izq = Nuevo;
+            }
+            else
+            {
+                Antecesor->Der = Nuevo;
+            }
+        }
+   }
 }
 
 void MostrarOperaciones(int &Nro)
@@ -412,66 +454,29 @@ void MostrarListado(NodoCursos *ListaDeCursos)
     }
 }
 
-void CargaDeDocentes(NodoCursos *ListaDeCursos,NodoArbol *&Raiz)
+void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz)
 {
+    int CantTotalDeAlumnos = 0;
     NodoCursos *Aux = ListaDeCursos;
-    Docentes D;
 
-    while(Aux != NULL)
+    if(Raiz != NULL)
     {
-        D.NombreDelDocente = Aux->Info.NombreDelDocente;
-        D.DniDelDocente = Aux->Info.DniDelDocente;
-        D.CantTotalDeAlumnos = Aux->Info.CuposOcupados;
+        ListarInOrden(ListaDeCursos,Raiz->Izq);
 
-        InsertarDocente(Raiz,D);
+        while(Aux != NULL)
+        {
+            if(Raiz->Info.Dni == Aux->Info.DniDelDocente)
+            {
+                CantTotalDeAlumnos += Aux->Info.CuposOcupados;
+            }
+
+            Aux = Aux->Sgte;
+        }
+
+        cout << "Nombre del Docente: " << Raiz->Info.NombreDelDocente << " - " << "Dni del docente: " << Raiz->Info.Dni << " - " << "Cantidad total de alumnos a cargo: " << CantTotalDeAlumnos << endl;
+
+        ListarInOrden(ListaDeCursos,Raiz->Der);
     }
-}
-
-void InsertarDocente(NodoArbol *&Raiz,Docentes Dato)
-{
-   NodoArbol *Aux = Raiz;
-   NodoArbol *Antecesor;
-
-   while(Aux != NULL && Aux->Info.Dni != Dato.Dni)
-   {
-       Antecesor = Aux;
-
-       if(Dato.Dni < Aux->Info.Dni)
-       {
-            Aux = Aux->Izq;
-       }
-       else
-       {
-            Aux = Aux->Der;
-       }
-   }
-
-   if(Aux == NULL || Aux->Info.Dni != Dato.Dni)
-   {
-        NodoArbol *Nuevo = new NodoArbol;
-        Nuevo->Info = Dato;
-        Nuevo->Der = Nuevo->Izq = NULL;
-
-        if(Raiz == NULL)
-        {
-            Raiz = Nuevo;
-        }
-        else
-        {
-            if(Dato.Dni < Antecesor->Info.Dni)
-            {
-                Antecesor->Izq = Nuevo;
-            }
-            else
-            {
-                Antecesor->Der = Nuevo;
-            }
-        }
-   }
-   else
-   {
-        Aux->Info.CantTotalDeAlumnos += Dato.CantTotalDeAlumnos;
-   }
 }
 
 void MostrarListadoDeRechazados(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDeEspera[][8])
@@ -503,19 +508,6 @@ void MostrarListadoDeRechazados(NodoCursos *&ListaDeCursos,ColaDeEspera MatrizDe
         cout << "-----------------" << endl;
 
         Aux = Aux->Sgte;
-    }
-}
-
-void ListarInOrden(NodoCursos *ListaDeCursos,NodoArbol *Raiz)
-{
-
-    if(Raiz != NULL)
-    {
-        ListarInOrden(ListaDeCursos,Raiz->Izq);
-
-        cout << "Nombre del Docente: " << Raiz->Info.NombreDelDocente << " - " << "Dni del docente: " << Raiz->Info.Dni << " - " << "Cantidad total de alumnos a cargo: " << Raiz->Info.CantTotalDeAlumnos << endl;
-
-        ListarInOrden(ListaDeCursos,Raiz->Der);
     }
 }
 
@@ -659,4 +651,3 @@ NodoAlumno *BusquedaDeAlumno(NodoAlumno *ListaDeAlumnos,int Dni)
         return Aux;
     }
 }
-
